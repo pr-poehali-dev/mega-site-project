@@ -7,7 +7,8 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { t, Language, TELEGRAM_CHANNEL } from '@/lib/translations';
+import { t, Language, TELEGRAM_CHANNEL, VEHICLES, PROMOCODES, getVehicleName } from '@/lib/translations';
+import { Input } from '@/components/ui/input';
 
 interface UserData {
   balance: number;
@@ -17,6 +18,8 @@ interface UserData {
   clickMax: number;
   businesses: number[];
   lastClickTime: number;
+  inventory: string[];
+  usedPromocodes: string[];
 }
 
 interface Business {
@@ -66,12 +69,16 @@ const Index = () => {
     clickMax: 2500,
     businesses: [],
     lastClickTime: 0,
+    inventory: [],
+    usedPromocodes: [],
   });
 
   const [online] = useState(Math.floor(Math.random() * 50000));
   const [businessProfit, setBusinessProfit] = useState(0);
   const [language, setLanguage] = useState<Language>('ru');
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [promocodeInput, setPromocodeInput] = useState('');
+  const [vehicleTab, setVehicleTab] = useState<'cars' | 'helicopters' | 'planes'>('cars');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -207,14 +214,77 @@ const Index = () => {
     });
   };
 
-  const CARS = [
-    { id: 1, name: 'BMW M5', price: 5000000, emoji: '🚗' },
-    { id: 2, name: 'Mercedes-AMG GT', price: 7500000, emoji: '🏎️' },
-    { id: 3, name: 'Lamborghini Aventador', price: 15000000, emoji: '🚙' },
-    { id: 4, name: 'Ferrari 488', price: 20000000, emoji: '🚕' },
-    { id: 5, name: 'Porsche 911', price: 10000000, emoji: '🚓' },
-    { id: 6, name: 'Bugatti Chiron', price: 50000000, emoji: '🚐' },
-  ];
+  const buyVehicle = (vehicleId: string, price: number, name: string, emoji: string) => {
+    if (user.inventory.includes(vehicleId)) {
+      toast({
+        title: `⚠️ ${t('error', language)}`,
+        description: t('alreadyOwned', language),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!isAdminMode && user.balance < price) {
+      toast({
+        title: `💰 ${t('insufficientFunds', language)}`,
+        description: `${t('need', language)} ${formatNumber(price)} ${t('coins', language)}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUser(prev => ({
+      ...prev,
+      balance: isAdminMode ? prev.balance : prev.balance - price,
+      inventory: [...prev.inventory, vehicleId],
+    }));
+
+    toast({
+      title: `🎉 ${t('addedToInventory', language)}`,
+      description: `${emoji} ${name}`,
+    });
+  };
+
+  const activatePromocode = () => {
+    const code = promocodeInput.trim();
+    
+    if (!code) return;
+
+    if (user.usedPromocodes.includes(code)) {
+      toast({
+        title: `⚠️ ${t('error', language)}`,
+        description: t('promocodeUsed', language),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const promo = PROMOCODES[code];
+    if (!promo) {
+      toast({
+        title: `⚠️ ${t('error', language)}`,
+        description: t('promocodeInvalid', language),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newItems = promo.items || [];
+    setUser(prev => ({
+      ...prev,
+      balance: prev.balance + promo.coins,
+      donateBalance: prev.donateBalance + promo.donate,
+      inventory: [...prev.inventory, ...newItems],
+      usedPromocodes: [...prev.usedPromocodes, code],
+    }));
+
+    toast({
+      title: `🎉 ${t('promocodeActivated', language)}`,
+      description: `+${formatNumber(promo.coins)} ${t('coins', language)}, +${promo.donate} ${t('donate', language)}${newItems.length > 0 ? `, +${newItems.length} транспорт` : ''}`,
+    });
+
+    setPromocodeInput('');
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -264,11 +334,13 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="business" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 md:grid-cols-7">
+          <TabsList className="grid w-full grid-cols-4 md:grid-cols-9">
             <TabsTrigger value="business">🏢 {t('business', language)}</TabsTrigger>
-            <TabsTrigger value="cars">🚗 {t('cars', language)}</TabsTrigger>
+            <TabsTrigger value="shop">🛍️ {t('shop', language)}</TabsTrigger>
+            <TabsTrigger value="inventory">🎒 {t('inventory', language)}</TabsTrigger>
             <TabsTrigger value="casino">🎰 {t('casino', language)}</TabsTrigger>
             <TabsTrigger value="donate">💎 {t('donate', language)}</TabsTrigger>
+            <TabsTrigger value="promocodes">🎫 {t('promocodes', language)}</TabsTrigger>
             <TabsTrigger value="profile">👤 {t('profile', language)}</TabsTrigger>
             <TabsTrigger value="admin">👑 {t('admin', language)}</TabsTrigger>
             <TabsTrigger value="settings">⚙️ {t('settings', language)}</TabsTrigger>
@@ -385,6 +457,10 @@ const Index = () => {
                   <p className="text-muted-foreground">{t('businessesOwned', language)}</p>
                   <p className="text-xl">{user.businesses.length} / {BUSINESSES.length}</p>
                 </div>
+                <div>
+                  <p className="text-muted-foreground">🎒 {t('inventory', language)}</p>
+                  <p className="text-xl">{user.inventory.length} транспорта</p>
+                </div>
                 
                 <div className="space-y-2 mt-6">
                   <p className="font-bold">{t('privilegeSystem', language)}</p>
@@ -408,30 +484,173 @@ const Index = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="cars" className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              {CARS.map((car) => (
-                <Card key={car.id} className="p-4 bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-600/50">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-2xl mb-1">{car.emoji}</p>
-                        <p className="font-bold">{car.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatNumber(car.price)} {t('coins', language)}
-                        </p>
-                      </div>
+          <TabsContent value="shop" className="space-y-4">
+            <Tabs value={vehicleTab} onValueChange={(v) => setVehicleTab(v as any)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="cars">🚗 {t('cars', language)}</TabsTrigger>
+                <TabsTrigger value="helicopters">🚁 {t('helicopters', language)}</TabsTrigger>
+                <TabsTrigger value="planes">✈️ {t('planes', language)}</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="cars" className="space-y-4 mt-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  {VEHICLES.cars.map((car) => {
+                    const owned = user.inventory.includes(car.id);
+                    return (
+                      <Card key={car.id} className={`p-4 ${owned ? 'border-green-600/50 bg-green-900/10' : 'bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-600/50'}`}>
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="text-2xl mb-1">{car.emoji} {car.country}</p>
+                              <p className="font-bold text-sm">{car.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatNumber(car.price)} {t('coins', language)}
+                              </p>
+                            </div>
+                            {owned && <Badge className="bg-green-600 text-xs">{t('bought', language)}</Badge>}
+                          </div>
+                          <Button 
+                            onClick={() => buyVehicle(car.id, car.price, car.name, car.emoji)}
+                            disabled={owned}
+                            className="w-full text-xs"
+                            variant={owned ? 'secondary' : 'default'}
+                            size="sm"
+                          >
+                            {owned ? t('owned', language) : t('buy', language)}
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="helicopters" className="space-y-4 mt-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  {VEHICLES.helicopters.map((heli) => {
+                    const owned = user.inventory.includes(heli.id);
+                    return (
+                      <Card key={heli.id} className={`p-4 ${owned ? 'border-green-600/50 bg-green-900/10' : 'bg-gradient-to-br from-purple-900/20 to-pink-900/20 border-purple-600/50'}`}>
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="text-2xl mb-1">{heli.emoji} {heli.country}</p>
+                              <p className="font-bold text-sm">{heli.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatNumber(heli.price)} {t('coins', language)}
+                              </p>
+                            </div>
+                            {owned && <Badge className="bg-green-600 text-xs">{t('bought', language)}</Badge>}
+                          </div>
+                          <Button 
+                            onClick={() => buyVehicle(heli.id, heli.price, heli.name, heli.emoji)}
+                            disabled={owned}
+                            className="w-full text-xs"
+                            variant={owned ? 'secondary' : 'default'}
+                            size="sm"
+                          >
+                            {owned ? t('owned', language) : t('buy', language)}
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="planes" className="space-y-4 mt-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  {VEHICLES.planes.map((plane) => {
+                    const owned = user.inventory.includes(plane.id);
+                    return (
+                      <Card key={plane.id} className={`p-4 ${owned ? 'border-green-600/50 bg-green-900/10' : 'bg-gradient-to-br from-yellow-900/20 to-orange-900/20 border-yellow-600/50'}`}>
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="text-2xl mb-1">{plane.emoji} {plane.country}</p>
+                              <p className="font-bold text-sm">{plane.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatNumber(plane.price)} {t('coins', language)}
+                              </p>
+                            </div>
+                            {owned && <Badge className="bg-green-600 text-xs">{t('bought', language)}</Badge>}
+                          </div>
+                          <Button 
+                            onClick={() => buyVehicle(plane.id, plane.price, plane.name, plane.emoji)}
+                            disabled={owned}
+                            className="w-full text-xs"
+                            variant={owned ? 'secondary' : 'default'}
+                            size="sm"
+                          >
+                            {owned ? t('owned', language) : t('buy', language)}
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          <TabsContent value="inventory" className="space-y-4">
+            <Card className="p-6">
+              <h3 className="text-2xl font-bold mb-4">🎒 {t('myInventory', language)}</h3>
+              {user.inventory.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-2">{t('emptyInventory', language)}</p>
+                  <p className="text-sm text-muted-foreground">{t('startBuyingVehicles', language)}</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-4 gap-4">
+                  {user.inventory.map((itemId, index) => {
+                    const allVehicles = [...VEHICLES.cars, ...VEHICLES.helicopters, ...VEHICLES.planes];
+                    const vehicle = allVehicles.find(v => v.id === itemId);
+                    if (!vehicle) return null;
+                    return (
+                      <Card key={index} className="p-4 bg-gradient-to-br from-green-900/20 to-emerald-900/20 border-green-600/50">
+                        <div className="text-center">
+                          <p className="text-3xl mb-2">{vehicle.emoji}</p>
+                          <p className="font-bold text-sm">{vehicle.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{vehicle.country}</p>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="promocodes" className="space-y-4">
+            <Card className="p-6 bg-gradient-to-br from-purple-900/20 to-pink-900/20 border-purple-600/50">
+              <h3 className="text-2xl font-bold mb-4">🎫 {t('promocodes', language)}</h3>
+              <div className="space-y-4">
+                <Input 
+                  placeholder={t('enterPromocode', language)}
+                  value={promocodeInput}
+                  onChange={(e) => setPromocodeInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && activatePromocode()}
+                  className="text-lg"
+                />
+                <Button 
+                  onClick={activatePromocode}
+                  className="w-full h-16 text-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  {t('activatePromocode', language)}
+                </Button>
+                {user.usedPromocodes.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground mb-2">Использованные промокоды:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {user.usedPromocodes.map((code, i) => (
+                        <Badge key={i} variant="secondary">{code}</Badge>
+                      ))}
                     </div>
-                    <Button 
-                      onClick={() => window.open(`https://${TELEGRAM_CHANNEL}`, '_blank')}
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      {t('buy', language)}
-                    </Button>
                   </div>
-                </Card>
-              ))}
-            </div>
+                )}
+              </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="admin" className="space-y-4">
