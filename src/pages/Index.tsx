@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { t, Language } from '@/lib/translations';
 
 interface UserData {
   balance: number;
@@ -68,6 +70,7 @@ const Index = () => {
 
   const [online] = useState(Math.floor(Math.random() * 50000));
   const [businessProfit, setBusinessProfit] = useState(0);
+  const [language, setLanguage] = useState<Language>('ru');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -91,8 +94,8 @@ const Index = () => {
         clickMax: nextPrivilege.max,
       }));
       toast({
-        title: '🎉 Новая привилегия!',
-        description: `Вы получили статус ${nextPrivilege.name}`,
+        title: `🎉 ${t('newPrivilege', language)}`,
+        description: `${t('youGotStatus', language)} ${nextPrivilege.name}`,
       });
     }
   }, [user.balance, user.privilege, toast]);
@@ -101,8 +104,8 @@ const Index = () => {
     const now = Date.now();
     if (now - user.lastClickTime < 1000) {
       toast({
-        title: '⏳ Подождите',
-        description: 'Слишком быстро! Подождите секунду',
+        title: `⏳ ${t('waitToast', language)}`,
+        description: t('tooFastToast', language),
         variant: 'destructive',
       });
       return;
@@ -116,8 +119,8 @@ const Index = () => {
     }));
 
     toast({
-      title: '💸 Клик!',
-      description: `+${formatNumber(earned)} монет`,
+      title: `💸 ${t('clickToast', language)}`,
+      description: `+${formatNumber(earned)} ${t('coins', language)}`,
     });
   };
 
@@ -127,8 +130,8 @@ const Index = () => {
 
     if (user.businesses.includes(bizId)) {
       toast({
-        title: '⚠️ Ошибка',
-        description: 'У вас уже есть этот бизнес',
+        title: `⚠️ ${t('error', language)}`,
+        description: t('alreadyOwned', language),
         variant: 'destructive',
       });
       return;
@@ -136,8 +139,8 @@ const Index = () => {
 
     if (user.balance < biz.price) {
       toast({
-        title: '💰 Недостаточно средств',
-        description: `Нужно ${formatNumber(biz.price)} монет`,
+        title: `💰 ${t('insufficientFunds', language)}`,
+        description: `${t('need', language)} ${formatNumber(biz.price)} ${t('coins', language)}`,
         variant: 'destructive',
       });
       return;
@@ -150,7 +153,7 @@ const Index = () => {
     }));
 
     toast({
-      title: '🎉 Покупка успешна!',
+      title: `🎉 ${t('purchaseSuccess', language)}`,
       description: `${biz.emoji} ${biz.name}`,
     });
   };
@@ -158,8 +161,8 @@ const Index = () => {
   const collectProfit = () => {
     if (businessProfit === 0) {
       toast({
-        title: '⚠️ Нет прибыли',
-        description: 'Прибыль пока не накопилась',
+        title: `⚠️ ${t('noProfit', language)}`,
+        description: t('profitNotAccumulated', language),
         variant: 'destructive',
       });
       return;
@@ -171,8 +174,8 @@ const Index = () => {
     }));
 
     toast({
-      title: '💰 Прибыль собрана!',
-      description: `+${formatNumber(businessProfit)} монет`,
+      title: `💰 ${t('profitCollected', language)}`,
+      description: `+${formatNumber(businessProfit)} ${t('coins', language)}`,
     });
 
     setBusinessProfit(0);
@@ -181,8 +184,8 @@ const Index = () => {
   const playCasino = (bet: number) => {
     if (user.balance < bet) {
       toast({
-        title: '💰 Недостаточно средств',
-        description: `Нужно ${formatNumber(bet)} монет`,
+        title: `💰 ${t('insufficientFunds', language)}`,
+        description: `${t('need', language)} ${formatNumber(bet)} ${t('coins', language)}`,
         variant: 'destructive',
       });
       return;
@@ -197,8 +200,8 @@ const Index = () => {
     }));
 
     toast({
-      title: win ? '🎰 Выигрыш!' : '😢 Проигрыш',
-      description: win ? `+${formatNumber(result)} монет` : `${formatNumber(bet)} монет`,
+      title: win ? `🎰 ${t('win', language)}` : `😢 ${t('loss', language)}`,
+      description: win ? `+${formatNumber(result)} ${t('coins', language)}` : `${formatNumber(bet)} ${t('coins', language)}`,
       variant: win ? 'default' : 'destructive',
     });
   };
@@ -208,12 +211,12 @@ const Index = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="text-center space-y-4">
           <h1 className="text-6xl md:text-8xl font-bold rgb-gradient">
-            МЕГА САЙТ
+            {t('title', language)}
           </h1>
           <div className="flex justify-center gap-4">
             <Badge variant="outline" className="text-lg px-4 py-2">
               <Icon name="Users" className="mr-2" size={20} />
-              Онлайн: {formatNumber(online)}
+              {t('online', language)}: {formatNumber(online)}
             </Badge>
           </div>
         </div>
@@ -221,17 +224,17 @@ const Index = () => {
         <Card className="p-6 border-2 border-primary/20 pulse-glow">
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <p className="text-muted-foreground">Баланс</p>
+              <p className="text-muted-foreground">{t('balance', language)}</p>
               <p className="text-3xl font-bold text-primary">{formatNumber(user.balance)}</p>
             </div>
             <div className="text-center">
-              <p className="text-muted-foreground">Донат</p>
+              <p className="text-muted-foreground">{t('donate', language)}</p>
               <p className="text-3xl font-bold" style={{ color: 'hsl(var(--game-gold))' }}>
                 {formatNumber(user.donateBalance)}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-muted-foreground">Статус</p>
+              <p className="text-muted-foreground">{t('status', language)}</p>
               <p className="text-2xl font-bold">{user.privilege}</p>
             </div>
           </div>
@@ -243,19 +246,20 @@ const Index = () => {
             size="lg" 
             className="text-4xl px-12 py-8 h-auto click-animation pulse-glow bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
           >
-            💸 КЛИК
+            💸 {t('click', language)}
           </Button>
           <p className="text-sm text-muted-foreground mt-2">
-            {formatNumber(user.clickMin)} - {formatNumber(user.clickMax)} за клик
+            {formatNumber(user.clickMin)} - {formatNumber(user.clickMax)} {t('perClick', language)}
           </p>
         </div>
 
         <Tabs defaultValue="business" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="business">🏢 Бизнес</TabsTrigger>
-            <TabsTrigger value="casino">🎰 Казино</TabsTrigger>
-            <TabsTrigger value="donate">💎 Донат</TabsTrigger>
-            <TabsTrigger value="profile">👤 Профиль</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="business">🏢 {t('business', language)}</TabsTrigger>
+            <TabsTrigger value="casino">🎰 {t('casino', language)}</TabsTrigger>
+            <TabsTrigger value="donate">💎 {t('donate', language)}</TabsTrigger>
+            <TabsTrigger value="profile">👤 {t('profile', language)}</TabsTrigger>
+            <TabsTrigger value="settings">⚙️ {t('settings', language)}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="business" className="space-y-4">
@@ -263,13 +267,13 @@ const Index = () => {
               <Card className="p-4 bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-600/50">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-muted-foreground">Накопленная прибыль</p>
+                    <p className="text-sm text-muted-foreground">{t('accumulatedProfit', language)}</p>
                     <p className="text-2xl font-bold" style={{ color: 'hsl(var(--game-green))' }}>
                       {formatNumber(businessProfit)}
                     </p>
                   </div>
                   <Button onClick={collectProfit} className="bg-green-600 hover:bg-green-700">
-                    Забрать прибыль
+                    {t('collectProfit', language)}
                   </Button>
                 </div>
               </Card>
@@ -286,10 +290,10 @@ const Index = () => {
                           <p className="text-2xl mb-1">{biz.emoji}</p>
                           <p className="font-bold">{biz.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            {formatNumber(biz.profit)} монет/сек
+                            {formatNumber(biz.profit)} {t('coinsPerSec', language)}
                           </p>
                         </div>
-                        {owned && <Badge className="bg-green-600">Куплено</Badge>}
+                        {owned && <Badge className="bg-green-600">{t('bought', language)}</Badge>}
                       </div>
                       <Button 
                         onClick={() => buyBusiness(biz.id)} 
@@ -297,7 +301,7 @@ const Index = () => {
                         className="w-full"
                         variant={owned ? 'secondary' : 'default'}
                       >
-                        {owned ? 'В собственности' : `Купить за ${formatNumber(biz.price)}`}
+                        {owned ? t('owned', language) : `${t('buyFor', language)} ${formatNumber(biz.price)}`}
                       </Button>
                     </div>
                   </Card>
@@ -308,9 +312,9 @@ const Index = () => {
 
           <TabsContent value="casino" className="space-y-4">
             <Card className="p-6 bg-gradient-to-br from-purple-900/20 to-pink-900/20 border-purple-600/50">
-              <h3 className="text-2xl font-bold mb-4 text-center">🎰 Казино</h3>
+              <h3 className="text-2xl font-bold mb-4 text-center">🎰 {t('casinoTitle', language)}</h3>
               <p className="text-center text-muted-foreground mb-6">
-                Шанс выигрыша: 40% | Выплата: ×1.5
+                {t('casinoInfo', language)}
               </p>
               <div className="grid md:grid-cols-3 gap-4">
                 {[10000, 50000, 100000].map((bet) => (
@@ -319,7 +323,7 @@ const Index = () => {
                     onClick={() => playCasino(bet)}
                     className="h-20 text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                   >
-                    Ставка<br/>{formatNumber(bet)}
+                    {t('bet', language)}<br/>{formatNumber(bet)}
                   </Button>
                 ))}
               </div>
@@ -332,46 +336,46 @@ const Index = () => {
                 <Card key={item.amount} className="p-6 text-center bg-gradient-to-br from-yellow-900/20 to-orange-900/20 border-yellow-600/50">
                   <p className="text-4xl mb-3">{item.emoji}</p>
                   <p className="text-2xl font-bold mb-2" style={{ color: 'hsl(var(--game-gold))' }}>
-                    {formatNumber(item.amount)} доната
+                    {formatNumber(item.amount)} {t('donateAmount', language)}
                   </p>
                   <p className="text-muted-foreground mb-4">{item.price} руб</p>
                   <Button className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700">
-                    Купить
+                    {t('buy', language)}
                   </Button>
                 </Card>
               ))}
             </div>
 
             <Card className="p-6 bg-gradient-to-r from-red-900/20 to-orange-900/20 border-red-600/50">
-              <h3 className="text-2xl font-bold mb-3 text-center">🎁 Кейс</h3>
+              <h3 className="text-2xl font-bold mb-3 text-center">🎁 {t('caseTitle', language)}</h3>
               <p className="text-center text-muted-foreground mb-4">
-                Машины, привилегии, деньги, донат
+                {t('caseDescription', language)}
               </p>
               <Button className="w-full h-16 text-xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700">
-                Открыть за 700 руб
+                {t('openFor', language)} 700 руб
               </Button>
             </Card>
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-4">
             <Card className="p-6">
-              <h3 className="text-2xl font-bold mb-4">👤 Профиль</h3>
+              <h3 className="text-2xl font-bold mb-4">👤 {t('profile', language)}</h3>
               <div className="space-y-4">
                 <div>
-                  <p className="text-muted-foreground">Текущий статус</p>
+                  <p className="text-muted-foreground">{t('currentStatus', language)}</p>
                   <p className="text-2xl font-bold">{user.privilege}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Доход за клик</p>
+                  <p className="text-muted-foreground">{t('incomePerClick', language)}</p>
                   <p className="text-xl">{formatNumber(user.clickMin)} - {formatNumber(user.clickMax)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Бизнесов в собственности</p>
+                  <p className="text-muted-foreground">{t('businessesOwned', language)}</p>
                   <p className="text-xl">{user.businesses.length} / {BUSINESSES.length}</p>
                 </div>
                 
                 <div className="space-y-2 mt-6">
-                  <p className="font-bold">Система привилегий:</p>
+                  <p className="font-bold">{t('privilegeSystem', language)}</p>
                   {PRIVILEGES.map((priv) => {
                     const progress = Math.min((user.balance / priv.required) * 100, 100);
                     const isActive = user.privilege === priv.name;
@@ -387,6 +391,30 @@ const Index = () => {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-4">
+            <Card className="p-6">
+              <h3 className="text-2xl font-bold mb-4">⚙️ {t('settings', language)}</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-muted-foreground mb-2">{t('language', language)}</p>
+                  <Select value={language} onValueChange={(value) => setLanguage(value as Language)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ru">
+                        🇷🇺 {t('russian', language)}
+                      </SelectItem>
+                      <SelectItem value="en">
+                        🇬🇧 {t('english', language)}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </Card>
