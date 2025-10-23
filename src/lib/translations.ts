@@ -252,8 +252,74 @@ export const translations: Translations = {
     ru: 'Лучшая работа',
     en: 'Best Job',
   },
+  admin: {
+    ru: 'Админ',
+    en: 'Admin',
+  },
+  adminPanel: {
+    ru: 'Админ панель',
+    en: 'Admin Panel',
+  },
+  adminMode: {
+    ru: 'Режим админа',
+    en: 'Admin Mode',
+  },
+  adminModeActive: {
+    ru: 'Активен',
+    en: 'Active',
+  },
+  adminModeInactive: {
+    ru: 'Неактивен',
+    en: 'Inactive',
+  },
+  adminModeDescription: {
+    ru: 'Все покупки бесплатны пока активен режим админа',
+    en: 'All purchases are free while admin mode is active',
+  },
+  toggleAdminMode: {
+    ru: 'Переключить режим админа',
+    en: 'Toggle Admin Mode',
+  },
+  cars: {
+    ru: 'Машины',
+    en: 'Cars',
+  },
+  garage: {
+    ru: 'Гараж',
+    en: 'Garage',
+  },
+  viewInGarage: {
+    ru: 'Смотреть в гараже',
+    en: 'View in Garage',
+  },
+  car_1: {
+    ru: 'BMW M5',
+    en: 'BMW M5',
+  },
+  car_2: {
+    ru: 'Mercedes-AMG GT',
+    en: 'Mercedes-AMG GT',
+  },
+  car_3: {
+    ru: 'Lamborghini Aventador',
+    en: 'Lamborghini Aventador',
+  },
+  car_4: {
+    ru: 'Ferrari 488',
+    en: 'Ferrari 488',
+  },
+  car_5: {
+    ru: 'Porsche 911',
+    en: 'Porsche 911',
+  },
+  car_6: {
+    ru: 'Bugatti Chiron',
+    en: 'Bugatti Chiron',
+  },
 };
 
 export const t = (key: string, lang: Language): string => {
   return translations[key]?.[lang] || key;
 };
+
+export const TELEGRAM_CHANNEL = 't.me/av7272g';

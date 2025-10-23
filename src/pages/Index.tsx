@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { t, Language } from '@/lib/translations';
+import { t, Language, TELEGRAM_CHANNEL } from '@/lib/translations';
 
 interface UserData {
   balance: number;
@@ -71,6 +71,7 @@ const Index = () => {
   const [online] = useState(Math.floor(Math.random() * 50000));
   const [businessProfit, setBusinessProfit] = useState(0);
   const [language, setLanguage] = useState<Language>('ru');
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -137,7 +138,7 @@ const Index = () => {
       return;
     }
 
-    if (user.balance < biz.price) {
+    if (!isAdminMode && user.balance < biz.price) {
       toast({
         title: `💰 ${t('insufficientFunds', language)}`,
         description: `${t('need', language)} ${formatNumber(biz.price)} ${t('coins', language)}`,
@@ -148,7 +149,7 @@ const Index = () => {
 
     setUser(prev => ({
       ...prev,
-      balance: prev.balance - biz.price,
+      balance: isAdminMode ? prev.balance : prev.balance - biz.price,
       businesses: [...prev.businesses, bizId],
     }));
 
@@ -182,7 +183,7 @@ const Index = () => {
   };
 
   const playCasino = (bet: number) => {
-    if (user.balance < bet) {
+    if (!isAdminMode && user.balance < bet) {
       toast({
         title: `💰 ${t('insufficientFunds', language)}`,
         description: `${t('need', language)} ${formatNumber(bet)} ${t('coins', language)}`,
@@ -196,7 +197,7 @@ const Index = () => {
 
     setUser(prev => ({
       ...prev,
-      balance: prev.balance + result,
+      balance: isAdminMode ? prev.balance : prev.balance + result,
     }));
 
     toast({
@@ -205,6 +206,15 @@ const Index = () => {
       variant: win ? 'default' : 'destructive',
     });
   };
+
+  const CARS = [
+    { id: 1, name: 'BMW M5', price: 5000000, emoji: '🚗' },
+    { id: 2, name: 'Mercedes-AMG GT', price: 7500000, emoji: '🏎️' },
+    { id: 3, name: 'Lamborghini Aventador', price: 15000000, emoji: '🚙' },
+    { id: 4, name: 'Ferrari 488', price: 20000000, emoji: '🚕' },
+    { id: 5, name: 'Porsche 911', price: 10000000, emoji: '🚓' },
+    { id: 6, name: 'Bugatti Chiron', price: 50000000, emoji: '🚐' },
+  ];
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -254,11 +264,13 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="business" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6 md:grid-cols-7">
             <TabsTrigger value="business">🏢 {t('business', language)}</TabsTrigger>
+            <TabsTrigger value="cars">🚗 {t('cars', language)}</TabsTrigger>
             <TabsTrigger value="casino">🎰 {t('casino', language)}</TabsTrigger>
             <TabsTrigger value="donate">💎 {t('donate', language)}</TabsTrigger>
             <TabsTrigger value="profile">👤 {t('profile', language)}</TabsTrigger>
+            <TabsTrigger value="admin">👑 {t('admin', language)}</TabsTrigger>
             <TabsTrigger value="settings">⚙️ {t('settings', language)}</TabsTrigger>
           </TabsList>
 
@@ -392,6 +404,61 @@ const Index = () => {
                     );
                   })}
                 </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cars" className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              {CARS.map((car) => (
+                <Card key={car.id} className="p-4 bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-600/50">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-2xl mb-1">{car.emoji}</p>
+                        <p className="font-bold">{car.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatNumber(car.price)} {t('coins', language)}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => window.open(`https://${TELEGRAM_CHANNEL}`, '_blank')}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      {t('buy', language)}
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="admin" className="space-y-4">
+            <Card className="p-6 bg-gradient-to-br from-red-900/20 to-yellow-900/20 border-red-600/50">
+              <h3 className="text-2xl font-bold mb-4">👑 {t('adminPanel', language)}</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-card">
+                  <div>
+                    <p className="font-bold text-lg">{t('adminMode', language)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t('adminModeDescription', language)}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant={isAdminMode ? 'default' : 'secondary'}
+                    className={isAdminMode ? 'bg-green-600' : ''}
+                  >
+                    {isAdminMode ? t('adminModeActive', language) : t('adminModeInactive', language)}
+                  </Badge>
+                </div>
+                <Button 
+                  onClick={() => setIsAdminMode(!isAdminMode)}
+                  className="w-full h-16 text-xl"
+                  variant={isAdminMode ? 'destructive' : 'default'}
+                >
+                  {t('toggleAdminMode', language)}
+                </Button>
               </div>
             </Card>
           </TabsContent>
